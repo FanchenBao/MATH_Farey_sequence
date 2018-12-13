@@ -1,27 +1,145 @@
 import java.util.*;
-import java.lang.*; // for Math.log10() and Math.pow()
 
 /*
 Author: Fanchen Bao
 Date: 12/13/2018
 
+The following algorithm produces a Farey sequence with a given upper limit (limit) and within
+the range beginN/beginD to endN/endD (inclusive, user given range must be within [0, 1]). The given range itself must be part of the Farey sequence.
+
+The algorithm is based on three principles:
+1. Two reduced fractions 0 <= a/b < c/d <= 1 are neighbors in some Farey sequence iff b*c - a*d = 1.
+2. If b*c - a*d = 1, the unique fracction between a/b and c/d with the smallest denominator is the mediant (a+b)/(c+d).
+3. If a/b < c/d < e/f are three consecutive Farey sequence fractions, then c/d = (a+e)/(b+f)
+
+See https://en.wikipedia.org/wiki/Farey_sequence
 
 */
 
+
 public class Farey_sequence
 {
+    public class Fraction implements Comparable<Fraction>{ // wrapper class
+        private int n, d;
 
-    public static void main(String[] args){
-        long startTime = System.nanoTime();
+        // constructor
+        public Fraction(int num, int den){
+            if (den == 0){
+                System.out.println("Error! Denominator cannot be 0");
+                System.exit(0);
+            }
+            n = num; d = den;
+        }
 
-        // p73 sol = new p73();
+        @Override
+        public String toString() { // for printing purpose
+            return String.format(n + "/" + d); 
+        }
+
+        @Override
+        public int compareTo(Fraction otherFraction){
+            Double thisValue = (double)n / d;
+            Double otherValue = (double)otherFraction.n / otherFraction.d;
+            return thisValue.compareTo(otherValue);
+        }
+
+        public int getNumerator(){return n;}
+        public int getDenominator(){return d;}
+    };
+    
+    private ArrayList<Fraction> fareySequence; // array of Farey sequence fractions
+
+
+
+    // constructor. Constructing full Farey sequence from 0 to 1
+    public Farey_sequence(int limit){
+        fareySequence = new ArrayList<Fraction>();
+        makeFareySequence(limit, new Fraction(0, 1), new Fraction(1, 1));
+    }
+
+    // constructor. Constructing Farey sequence from beginN/beginD to endN/endD
+    public Farey_sequence(int limit, int beginN, int beginD, int endN, int endD){
+        fareySequence = new ArrayList<Fraction>();
+        // turn begin and end into proper fraction
+        int beginGCD = GCD(beginN, beginD);
+        int endGCD = GCD(endN, endD);
+        Fraction lowerBound = new Fraction(beginN/beginGCD, beginD/beginGCD);
+        Fraction upperBound = new Fraction(endN/endGCD, endD/endGCD);
         
-        int limit = 12000;
-        int a = 1, b = 3; // most left fraction in the Farey sequence
+        if (!checkBound(limit, lowerBound, upperBound))
+            System.exit(0);
+
+        makeFareySequence(limit, lowerBound, upperBound);
+    }
+
+
+    // print the generated farey sequence
+    public void printSeq(){ 
+        System.out.println(fareySequence);
+    }
+
+    // get the total number of fractions in the sequence
+    public int getSize(){
+        return fareySequence.size();
+    }
+
+    // get a deep copy of the Farey sequence.
+    public ArrayList<Fraction> getSeq(){
+        ArrayList<Fraction> ans = new ArrayList<Fraction>();
+        for (Fraction f : fareySequence)
+            ans.add(new Fraction(f.getNumerator(), f.getDenominator())); // return deep copy of the Farey sequence.
+        return ans;
+    }
+
+
+
+    private int GCD(int a, int b) { return b==0 ? a : GCD(b, a%b); }
+
+    // check whether the given upper and lower bound are legal
+    private boolean checkBound(int limit, Fraction lowerBound, Fraction upperBound){
+        // check user input
+        if (lowerBound.compareTo(upperBound) > 0){
+            System.out.println("Error in range. Lower bound must be smaller or equal to upper bound");
+            return false;
+        }
+        if (lowerBound.compareTo(new Fraction(0, 1)) <= 0){
+            System.out.println("Error in range. Lower bound must be non-negative");
+            return false;
+        }
+        if (upperBound.compareTo(new Fraction(1, 1)) > 0){
+            System.out.println("Error in range. Upper bound must not be bigger than 1");
+            return false;
+        }
+        if (lowerBound.getDenominator() > limit || upperBound.getDenominator() > limit){
+            System.out.println("Error in range. Denominators of lower or upper bound cannot exceed limit");
+            return false;   
+        }
+
+        return true;
+    }
+
+    /*
+    Precondition: A limit for Farey sequence's denominator is given, and the range for the fraction is given
+    Postcondition: Produce Farey sequence with the given limit, its fraction ranges from lowerBound to upperBound (inclusive)
+    */
+    private void makeFareySequence(int limit, Fraction lowerBound, Fraction upperBound){
+        fareySequence.add(lowerBound);
+
+        int a, b; // most left fraction in the Farey sequence
+        if (lowerBound.getNumerator() == 0){ // when lowerBound is 0, we must use the next fraction as starting point
+            fareySequence.add(new Fraction(1, limit));
+            a = 1;
+            b = limit; 
+        }
+        else{
+            a = lowerBound.getNumerator();
+            b = lowerBound.getDenominator();
+        }
+
         int c, d; // c/d is the adjacent fraction to the right of a/b
-        int c0 = 1, d0 = 2; // Any fraction that satisfies b*c0 - a*d0 = 1 and c0 <= a, d0 <= b. 
-                            // The purpose of c0/d0 is to calculate the first c/d adjacent to a/b.
-                            // Once we have the first adjacent pair of a/b and c/d in the Farey sequence, all the remaining fractions can be generated
+        int c0 = a, d0 = b - 1/a; // Any fraction that satisfies b*c0 - a*d0 = 1 and c0 <= a, d0 <= b. Here we choose c0 = a, d0 = b - 1/a for convenience.
+                                    // The purpose of c0/d0 is to calculate the first c/d adjacent to a/b.
+                                    // Once we have the first adjacent pair of a/b and c/d in the Farey sequence, all the remaining fractions can be generated
         int k; // k is coefficient
 
         // generate the first c/d. The equation is acquired from b*c0 - a*d0 = 1 = b*c - a*d, given gcd(a, b) = 1 and d <= limit < b + d 
@@ -29,9 +147,8 @@ public class Farey_sequence
         c = k * a + c0;
         d = k * b + d0;
 
-        // generate the rest of the Farey sequence with limit = 12000, and each next fraction is adjacent to the previous one
+        // generate the rest of the Farey sequence with the given limit and each next fraction is adjacent to the previous one
         // until c = 1, d = 2 (end condition). Of course, count the number of fraction generated along the way.
-        int count = 0;
         int e, f; // the next adjacent fraction to c/d
 
         // formula for the generation of the next adjancet fraction e/f is as follows.
@@ -42,8 +159,8 @@ public class Farey_sequence
         // k*d <= b + limit < (k + 1)*d
         // k <= (b + limit) / d < k + 1
         // So k = (b + limit) / d with integer division
-        while (c != 1 && d != 2){
-            count++;
+        while (c != upperBound.getNumerator() || d != upperBound.getDenominator()) {
+            fareySequence.add(new Fraction(c, d));
             k = (b + limit) / d; // integer division
             e = k * c - a; // next c
             f = k * d - b; // next d
@@ -52,17 +169,6 @@ public class Farey_sequence
             c = e;
             d = f;
         }
-
-        System.out.println(count);
-
-        // runtime = 0.08 s
-
-
-
-
-        long endTime = System.nanoTime();
-        double duration = (endTime - startTime) / 1000000000.0;  //divide by 1000000 to get milliseconds.
-        System.out.println("\nRuntime: " + duration + " s");
-
+        fareySequence.add(upperBound); // last fraction
     }
 }
