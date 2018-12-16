@@ -51,13 +51,25 @@ public class Farey_sequence
 
 
 
-    // constructor. Constructing full Farey sequence from 0 to 1
+    /**
+    * Constructor. Constructing full Farey sequence from 0 to 1
+    * @param limit Largest numerator allowed in the Farey sequence
+    * @return none
+    */
     public Farey_sequence(int limit){
         fareySequence = new ArrayList<Fraction>();
         makeFareySequence(limit, new Fraction(0, 1), new Fraction(1, 1));
     }
 
-    // constructor. Constructing Farey sequence from beginN/beginD to endN/endD
+    /**
+    * Constructor. Constructing Farey sequence from beginN/beginD to endN/endD
+    * @param limit Largest numerator allowed in the Farey sequence
+    * @param beginN Numerator of the lower bound fraction
+    * @param beginD Denominator of the lower bound fraction. Lower bound fraction must be part of the Farey sequence.
+    * @param endN Numerator of the upper bound fraction
+    * @param endD Denominator of the upper bound fraction. Upper bound fraction must be part of the Farey sequence.
+    * @return none
+    */
     public Farey_sequence(int limit, int beginN, int beginD, int endN, int endD){
         fareySequence = new ArrayList<Fraction>();
         // turn begin and end into proper fraction
@@ -72,30 +84,48 @@ public class Farey_sequence
         makeFareySequence(limit, lowerBound, upperBound);
     }
 
-
-    // print the generated farey sequence
+    /**
+    * Print the generated farey sequence.
+    */
     public void printSeq(){ 
         System.out.println(fareySequence);
     }
 
-    // get the total number of fractions in the sequence
+    /**
+    * Get the total number of fractions in the sequence
+    */
     public int getSize(){
         return fareySequence.size();
     }
-
-    // get a deep copy of the Farey sequence.
-    public ArrayList<Fraction> getSeq(){
-        ArrayList<Fraction> ans = new ArrayList<Fraction>();
-        for (Fraction f : fareySequence)
-            ans.add(new Fraction(f.getNumerator(), f.getDenominator())); // return deep copy of the Farey sequence.
-        return ans;
+ 
+    /**
+    * Get the fraction from the generated Farey sequence at the given position.
+    * @param pos Fraction of the Farey sequence on the pos will be returned
+    * @return A long array of size two with first element being the numerator and second the denominator of the specific fraction
+    */
+    public long[] getFrac(int pos){
+        long[] res = new long[2];
+        if (pos >= fareySequence.size() || pos < 0){
+            System.out.println("Error, index out of range.");
+            return res;
+        }
+        res[0] = fareySequence.get(pos).getNumerator();
+        res[1] = fareySequence.get(pos).getDenominator();
+        return res;
     }
 
 
 
     private int GCD(int a, int b) { return b==0 ? a : GCD(b, a%b); }
 
-    // check whether the given upper and lower bound are legal
+    /**
+    * Check whether the given upper and lower bound are legal
+    * @param limit Largest denominator allowed in the current Farey sequence
+    * @param lowerBound a Fraction object representing the fraction value of lower bound.
+    * @param upperBound a Fraction object representing the fraction value of upper bound.
+    * @return A boolean value true if upper and loewr bound are in the range of [0, 1], lower bound < upper bound, 
+    *           and the denominator in the most reduced form of both upper and lower bound does not exceed limit
+    */
     private boolean checkBound(int limit, Fraction lowerBound, Fraction upperBound){
         // check user input
         if (lowerBound.compareTo(upperBound) > 0){
@@ -118,9 +148,14 @@ public class Farey_sequence
         return true;
     }
 
-    /*
-    Precondition: A limit for Farey sequence's denominator is given, and the range for the fraction is given
-    Postcondition: Produce Farey sequence with the given limit, its fraction ranges from lowerBound to upperBound (inclusive)
+    
+    /**
+    * Produce Farey sequence with the given limit, its fraction ranges from lowerBound to upperBound (inclusive). 
+    * The produced sequence is stored in the private class field fareySequence.
+    * @param limit Largest denominator allowed in the current Farey sequence
+    * @param lowerBound a Fraction object representing the fraction value of lower bound.
+    * @param upperBound a Fraction object representing the fraction value of upper bound.
+    * @return none
     */
     private void makeFareySequence(int limit, Fraction lowerBound, Fraction upperBound){
         fareySequence.add(lowerBound);
