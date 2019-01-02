@@ -190,7 +190,7 @@ public class Farey_sequence
         // Since a/b < c/d < e/f, and all three are adjacent in the current Farey sequence, we have
         // (a + e)/(b + f) = c/d. Since gcd(c,d) = 1, we have a + e = k*c, b + f = k*d.
         // Since c/d and e/f are adjacent, then the mediant in between them must have denominator d + f > limit.
-        // Thus, b + f = k*d <= b + limit < b + d + f = b + k*d = (k + 1)*d
+        // Thus, b + f = k*d <= b + limit < b + d + f = d + k*d = (k + 1)*d
         // k*d <= b + limit < (k + 1)*d
         // k <= (b + limit) / d < k + 1
         // So k = (b + limit) / d with integer division
